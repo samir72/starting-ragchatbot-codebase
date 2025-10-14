@@ -6,11 +6,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict
 import os
 
 from config import config
 from rag_system import RAGSystem
+##Fix for using an absolute path
+from pathlib import Path
 
 # Initialize FastAPI app
 app = FastAPI(title="Course Materials RAG System", root_path="")
@@ -43,7 +45,7 @@ class QueryRequest(BaseModel):
 class QueryResponse(BaseModel):
     """Response model for course queries"""
     answer: str
-    sources: List[str]
+    sources: List[Dict[str, str]]  # Changed to list of dicts with 'text' and 'url' keys
     session_id: str
 
 class CourseStats(BaseModel):
@@ -61,17 +63,39 @@ async def query_documents(request: QueryRequest):
         session_id = request.session_id
         if not session_id:
             session_id = rag_system.session_manager.create_session()
-        
+
         # Process query using RAG system
         answer, sources = rag_system.query(request.query, session_id)
-        
+
         return QueryResponse(
             answer=answer,
             sources=sources,
             session_id=session_id
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        # Enhanced error logging for debugging
+        import traceback
+        error_type = type(e).__name__
+        error_msg = str(e)
+        error_trace = traceback.format_exc()
+
+        # Log detailed error information
+        print(f"\n{'='*60}")
+        print(f"ERROR in /api/query endpoint")
+        print(f"{'='*60}")
+        print(f"Error Type: {error_type}")
+        print(f"Error Message: {error_msg}")
+        print(f"Query: {request.query[:100]}...")
+        print(f"Session ID: {session_id}")
+        print(f"\nFull Traceback:")
+        print(error_trace)
+        print(f"{'='*60}\n")
+
+        # Return detailed error to frontend for better debugging
+        raise HTTPException(
+            status_code=500,
+            detail=f"{error_type}: {error_msg}"
+        )
 
 @app.get("/api/courses", response_model=CourseStats)
 async def get_course_stats():
@@ -116,4 +140,8 @@ class DevStaticFiles(StaticFiles):
     
     
 # Serve static files for the frontend
-app.mount("/", StaticFiles(directory="../frontend", html=True), name="static")
+# Get the directory where app.py is located
+#app.mount("/", StaticFiles(directory="../frontend", html=True), name="static")
+# Use absolute path for frontend directory
+BASE_DIR = Path(__file__).resolve().parent
+app.mount("/", StaticFiles(directory=BASE_DIR.parent / "frontend", html=True), name="static")
