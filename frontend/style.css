@@ -865,15 +865,19 @@ details[open] .suggested-header::before {
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
+    z-index: 10000;  /* Increased z-index to ensure it's always on top */
     box-shadow: var(--shadow);
     transition: all 0.3s ease;
+    /* Safari-specific fixes for fixed positioning */
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
 }
 
 .theme-toggle:hover {
     background: var(--surface-hover);
     border-color: var(--primary-color);
-    transform: scale(1.05);
+    -webkit-transform: translateZ(0) scale(1.05);
+    transform: translateZ(0) scale(1.05);
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
 }
 
@@ -888,7 +892,8 @@ details[open] .suggested-header::before {
 }
 
 .theme-toggle:active {
-    transform: scale(0.95);
+    -webkit-transform: translateZ(0) scale(0.95);
+    transform: translateZ(0) scale(0.95);
 }
 
 /* Visual feedback during theme toggle */
