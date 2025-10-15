@@ -4,17 +4,20 @@ Comprehensive error handling tests for the RAG chatbot system
 These tests validate that the system handles errors gracefully and provides
 useful error messages instead of crashing.
 """
-import sys
+
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
-from unittest.mock import Mock, patch, MagicMock
-from config import config
-from vector_store import VectorStore, SearchResults
-from search_tools import CourseSearchTool, ToolManager
 from ai_generator import AIGenerator
+from config import config
 from rag_system import RAGSystem
+from search_tools import CourseSearchTool, ToolManager
+from vector_store import SearchResults, VectorStore
 
 
 class TestVectorStoreErrorHandling:
@@ -25,7 +28,7 @@ class TestVectorStoreErrorHandling:
         vs = VectorStore(
             chroma_path=config.CHROMA_PATH,
             embedding_model=config.EMBEDDING_MODEL,
-            max_results=config.MAX_RESULTS
+            max_results=config.MAX_RESULTS,
         )
 
         # Search should not crash even if metadata is weird
@@ -39,7 +42,7 @@ class TestVectorStoreErrorHandling:
         vs = VectorStore(
             chroma_path=config.CHROMA_PATH,
             embedding_model=config.EMBEDDING_MODEL,
-            max_results=config.MAX_RESULTS
+            max_results=config.MAX_RESULTS,
         )
 
         # Try to resolve a course that definitely doesn't exist
@@ -54,7 +57,7 @@ class TestVectorStoreErrorHandling:
         vs = VectorStore(
             chroma_path=config.CHROMA_PATH,
             embedding_model=config.EMBEDDING_MODEL,
-            max_results=config.MAX_RESULTS
+            max_results=config.MAX_RESULTS,
         )
 
         # Test various None combinations
@@ -79,7 +82,7 @@ class TestVectorStoreErrorHandling:
         vs = VectorStore(
             chroma_path=config.CHROMA_PATH,
             embedding_model=config.EMBEDDING_MODEL,
-            max_results=config.MAX_RESULTS
+            max_results=config.MAX_RESULTS,
         )
 
         link = vs.get_lesson_link("INVALID_COURSE_XYZ", 1)
@@ -93,7 +96,7 @@ class TestVectorStoreErrorHandling:
         vs = VectorStore(
             chroma_path=config.CHROMA_PATH,
             embedding_model=config.EMBEDDING_MODEL,
-            max_results=config.MAX_RESULTS
+            max_results=config.MAX_RESULTS,
         )
 
         outline = vs.get_course_outline("")
@@ -111,7 +114,7 @@ class TestSearchToolErrorHandling:
         return VectorStore(
             chroma_path=config.CHROMA_PATH,
             embedding_model=config.EMBEDDING_MODEL,
-            max_results=config.MAX_RESULTS
+            max_results=config.MAX_RESULTS,
         )
 
     @pytest.fixture
@@ -132,22 +135,14 @@ class TestSearchToolErrorHandling:
 
     def test_execute_with_none_parameters(self, search_tool):
         """Test execute with None in optional parameters"""
-        result = search_tool.execute(
-            query="test",
-            course_name=None,
-            lesson_number=None
-        )
+        result = search_tool.execute(query="test", course_name=None, lesson_number=None)
 
         print(f"\n✓ Result with None params: {result[:100]}")
         assert isinstance(result, str)
 
     def test_format_results_with_empty_documents(self, search_tool):
         """Test formatting results when documents list is empty"""
-        empty_results = SearchResults(
-            documents=[],
-            metadata=[],
-            distances=[]
-        )
+        empty_results = SearchResults(documents=[], metadata=[], distances=[])
 
         formatted = search_tool._format_results(empty_results)
 
@@ -159,7 +154,7 @@ class TestSearchToolErrorHandling:
         mismatched_results = SearchResults(
             documents=["Doc1", "Doc2", "Doc3"],
             metadata=[{"course_title": "Course1"}],  # Only 1 metadata for 3 docs
-            distances=[0.1, 0.2, 0.3]
+            distances=[0.1, 0.2, 0.3],
         )
 
         try:
@@ -178,7 +173,7 @@ class TestToolManagerErrorHandling:
         """Test executing a tool that doesn't exist"""
         manager = ToolManager()
 
-        result = manager.execute_tool('fake_tool_xyz', query="test")
+        result = manager.execute_tool("fake_tool_xyz", query="test")
 
         print(f"\n✓ Nonexistent tool result: {result}")
         assert "not found" in result.lower()
@@ -189,7 +184,7 @@ class TestToolManagerErrorHandling:
         vs = VectorStore(
             chroma_path=config.CHROMA_PATH,
             embedding_model=config.EMBEDDING_MODEL,
-            max_results=config.MAX_RESULTS
+            max_results=config.MAX_RESULTS,
         )
 
         manager = ToolManager()
@@ -198,7 +193,7 @@ class TestToolManagerErrorHandling:
 
         try:
             # Try to execute without required 'query' parameter
-            result = manager.execute_tool('search_course_content')
+            result = manager.execute_tool("search_course_content")
             print(f"\n✓ Missing param result: {result}")
         except TypeError as e:
             # Expected to raise TypeError for missing required param
@@ -253,19 +248,17 @@ class TestAIGeneratorErrorHandling:
     def test_initialization_with_invalid_model(self):
         """Test initialization with invalid model name"""
         generator = AIGenerator(
-            api_key=config.ANTHROPIC_API_KEY,
-            model="invalid-model-name-xyz"
+            api_key=config.ANTHROPIC_API_KEY, model="invalid-model-name-xyz"
         )
 
         print(f"\n✓ Generator with invalid model initialized: {generator}")
         # Initialization should work, error comes during API call
 
-    @patch('anthropic.Anthropic')
+    @patch("anthropic.Anthropic")
     def test_handle_tool_execution_with_no_tool_uses(self, mock_anthropic):
         """Test _handle_tool_execution when content has no tool uses"""
         generator = AIGenerator(
-            api_key=config.ANTHROPIC_API_KEY,
-            model=config.ANTHROPIC_MODEL
+            api_key=config.ANTHROPIC_API_KEY, model=config.ANTHROPIC_MODEL
         )
 
         mock_response = Mock()
@@ -280,7 +273,7 @@ class TestAIGeneratorErrorHandling:
 
         base_params = {
             "messages": [{"role": "user", "content": "test"}],
-            "system": "test"
+            "system": "test",
         }
 
         result = generator._handle_tool_execution(mock_response, base_params, None)
@@ -294,16 +287,12 @@ class TestAIGeneratorErrorHandling:
             pytest.skip("No API key configured")
 
         generator = AIGenerator(
-            api_key=config.ANTHROPIC_API_KEY,
-            model=config.ANTHROPIC_MODEL
+            api_key=config.ANTHROPIC_API_KEY, model=config.ANTHROPIC_MODEL
         )
 
         # Should handle None conversation_history
         response = generator.generate_response(
-            query="test",
-            conversation_history=None,
-            tools=None,
-            tool_manager=None
+            query="test", conversation_history=None, tools=None, tool_manager=None
         )
 
         print(f"\n✓ Response with None values: {response[:100]}")
@@ -368,8 +357,8 @@ class TestRAGSystemErrorHandling:
         print(f"✓ Analytics call 3: {analytics3}")
 
         # Should be consistent
-        assert analytics1['total_courses'] == analytics2['total_courses']
-        assert analytics2['total_courses'] == analytics3['total_courses']
+        assert analytics1["total_courses"] == analytics2["total_courses"]
+        assert analytics2["total_courses"] == analytics3["total_courses"]
 
     @pytest.mark.skipif(not config.ANTHROPIC_API_KEY, reason="No API key")
     def test_query_error_recovery(self):
@@ -476,14 +465,14 @@ class TestEndToEndErrorScenarios:
         for query, should_be_valid in queries:
             try:
                 response, sources = rag.query(query)
-                results.append(('success', query, len(response)))
+                results.append(("success", query, len(response)))
                 print(f"\n✓ '{query[:30]}...' -> {len(response)} chars")
             except Exception as e:
-                results.append(('error', query, str(e)[:50]))
+                results.append(("error", query, str(e)[:50]))
                 print(f"\n✗ '{query[:30]}...' -> Error: {str(e)[:50]}")
 
         # System should keep working despite errors
-        success_count = sum(1 for r in results if r[0] == 'success')
+        success_count = sum(1 for r in results if r[0] == "success")
         print(f"\n✓✓ {success_count}/{len(queries)} queries succeeded")
 
 

@@ -1,6 +1,8 @@
-import anthropic
-from typing import List, Optional, Dict, Any
 import time
+from typing import Any, Dict, List, Optional
+
+import anthropic
+
 
 class AIGenerator:
     """Handles interactions with Anthropic's Claude API for generating responses"""
@@ -46,7 +48,7 @@ All responses must be:
 4. **Example-supported** - Include relevant examples when they aid understanding
 Provide only the direct answer to what was asked.
 """
-    
+
     def __init__(self, api_key: str, model: str):
         self.client = anthropic.Anthropic(api_key=api_key)
         self.model = model
@@ -56,44 +58,47 @@ Provide only the direct answer to what was asked.
             "model": self.model,
             "temperature": 0,
             "max_tokens": 800,
-            "timeout": 60.0  # 60 second timeout for API calls
+            "timeout": 60.0,  # 60 second timeout for API calls
         }
 
         # Retry configuration
         self.max_retries = 3
         self.retry_delay = 1.0  # Initial retry delay in seconds
-    
-    def generate_response(self, query: str,
-                         conversation_history: Optional[str] = None,
-                         tools: Optional[List] = None,
-                         tool_manager=None) -> str:
+
+    def generate_response(
+        self,
+        query: str,
+        conversation_history: Optional[str] = None,
+        tools: Optional[List] = None,
+        tool_manager=None,
+    ) -> str:
         """
         Generate AI response with optional tool usage and conversation context.
-        
+
         Args:
             query: The user's question or request
             conversation_history: Previous messages for context
             tools: Available tools the AI can use
             tool_manager: Manager to execute tools
-            
+
         Returns:
             Generated response as string
         """
-        
+
         # Build system content efficiently - avoid string ops when possible
         system_content = (
             f"{self.SYSTEM_PROMPT}\n\nPrevious conversation:\n{conversation_history}"
-            if conversation_history 
+            if conversation_history
             else self.SYSTEM_PROMPT
         )
-        
+
         # Prepare API call parameters efficiently
         api_params = {
             **self.base_params,
             "messages": [{"role": "user", "content": query}],
-            "system": system_content
+            "system": system_content,
         }
-        
+
         # Add tools if available
         if tools:
             api_params["tools"] = tools
@@ -134,8 +139,10 @@ Provide only the direct answer to what was asked.
                 # Rate limit - retry with exponential backoff
                 last_exception = e
                 if attempt < self.max_retries - 1:
-                    delay = self.retry_delay * (2 ** attempt)
-                    print(f"Rate limit hit, retrying in {delay}s (attempt {attempt + 1}/{self.max_retries})")
+                    delay = self.retry_delay * (2**attempt)
+                    print(
+                        f"Rate limit hit, retrying in {delay}s (attempt {attempt + 1}/{self.max_retries})"
+                    )
                     time.sleep(delay)
                     continue
                 else:
@@ -146,8 +153,10 @@ Provide only the direct answer to what was asked.
                 # Connection error - retry with backoff
                 last_exception = e
                 if attempt < self.max_retries - 1:
-                    delay = self.retry_delay * (2 ** attempt)
-                    print(f"Connection error, retrying in {delay}s (attempt {attempt + 1}/{self.max_retries})")
+                    delay = self.retry_delay * (2**attempt)
+                    print(
+                        f"Connection error, retrying in {delay}s (attempt {attempt + 1}/{self.max_retries})"
+                    )
                     time.sleep(delay)
                     continue
                 else:
@@ -158,8 +167,10 @@ Provide only the direct answer to what was asked.
                 # Timeout - retry with backoff
                 last_exception = e
                 if attempt < self.max_retries - 1:
-                    delay = self.retry_delay * (2 ** attempt)
-                    print(f"Timeout, retrying in {delay}s (attempt {attempt + 1}/{self.max_retries})")
+                    delay = self.retry_delay * (2**attempt)
+                    print(
+                        f"Timeout, retrying in {delay}s (attempt {attempt + 1}/{self.max_retries})"
+                    )
                     time.sleep(delay)
                     continue
                 else:
@@ -179,8 +190,10 @@ Provide only the direct answer to what was asked.
         # If we get here, all retries failed
         if last_exception:
             raise last_exception
-    
-    def _execute_tool_loop(self, initial_response, base_params: Dict[str, Any], tool_manager):
+
+    def _execute_tool_loop(
+        self, initial_response, base_params: Dict[str, Any], tool_manager
+    ):
         """
         Execute up to MAX_TOOL_ROUNDS of sequential tool calling.
 
@@ -219,18 +232,19 @@ Provide only the direct answer to what was asked.
                 if content_block.type == "tool_use":
                     try:
                         tool_result = tool_manager.execute_tool(
-                            content_block.name,
-                            **content_block.input
+                            content_block.name, **content_block.input
                         )
                     except Exception as e:
                         # Return error as tool result, let Claude handle it gracefully
                         tool_result = f"Error executing tool: {str(e)}"
 
-                    tool_results.append({
-                        "type": "tool_result",
-                        "tool_use_id": content_block.id,
-                        "content": tool_result
-                    })
+                    tool_results.append(
+                        {
+                            "type": "tool_result",
+                            "tool_use_id": content_block.id,
+                            "content": tool_result,
+                        }
+                    )
 
             # Add tool results as user message
             if tool_results:
@@ -244,7 +258,7 @@ Provide only the direct answer to what was asked.
                 "messages": messages,
                 "system": base_params["system"],
                 "tools": base_params["tools"],
-                "tool_choice": {"type": "auto"}
+                "tool_choice": {"type": "auto"},
             }
 
             # Make next API call
@@ -262,17 +276,18 @@ Provide only the direct answer to what was asked.
                 if content_block.type == "tool_use":
                     try:
                         tool_result = tool_manager.execute_tool(
-                            content_block.name,
-                            **content_block.input
+                            content_block.name, **content_block.input
                         )
                     except Exception as e:
                         tool_result = f"Error executing tool: {str(e)}"
 
-                    tool_results.append({
-                        "type": "tool_result",
-                        "tool_use_id": content_block.id,
-                        "content": tool_result
-                    })
+                    tool_results.append(
+                        {
+                            "type": "tool_result",
+                            "tool_use_id": content_block.id,
+                            "content": tool_result,
+                        }
+                    )
 
             if tool_results:
                 messages.append({"role": "user", "content": tool_results})
@@ -281,7 +296,7 @@ Provide only the direct answer to what was asked.
             final_params = {
                 **self.base_params,
                 "messages": messages,
-                "system": base_params["system"]
+                "system": base_params["system"],
             }
 
             current_response = self._make_api_call_with_retry(final_params)

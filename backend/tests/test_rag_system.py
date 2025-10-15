@@ -1,13 +1,15 @@
 """
 Tests for RAGSystem - End-to-end integration tests for content queries
 """
-import sys
+
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import pytest
-from rag_system import RAGSystem
 from config import config
+from rag_system import RAGSystem
 
 
 class TestRAGSystemBasics:
@@ -37,8 +39,9 @@ class TestRAGSystemBasics:
         print(f"✓ Tools: {[t['name'] for t in tools]}")
 
         assert len(tools) > 0, "No tools registered"
-        assert any(t['name'] == 'search_course_content' for t in tools), \
-            "search_course_content tool not registered"
+        assert any(
+            t["name"] == "search_course_content" for t in tools
+        ), "search_course_content tool not registered"
 
     def test_get_course_analytics(self, rag_system):
         """Test getting course analytics"""
@@ -46,14 +49,15 @@ class TestRAGSystemBasics:
 
         print(f"\n✓ Course analytics: {analytics}")
 
-        assert 'total_courses' in analytics
-        assert 'course_titles' in analytics
-        assert isinstance(analytics['total_courses'], int)
-        assert isinstance(analytics['course_titles'], list)
+        assert "total_courses" in analytics
+        assert "course_titles" in analytics
+        assert isinstance(analytics["total_courses"], int)
+        assert isinstance(analytics["course_titles"], list)
 
         # Should have courses loaded
-        assert analytics['total_courses'] > 0, \
-            "No courses loaded! Database might be empty"
+        assert (
+            analytics["total_courses"] > 0
+        ), "No courses loaded! Database might be empty"
 
 
 class TestRAGSystemQuery:
@@ -92,8 +96,9 @@ class TestRAGSystemQuery:
         assert "4" in response
 
         # General knowledge shouldn't search courses
-        assert len(sources) == 0, \
-            "General knowledge question should not return course sources"
+        assert (
+            len(sources) == 0
+        ), "General knowledge question should not return course sources"
 
     @pytest.mark.skipif(not config.ANTHROPIC_API_KEY, reason="No API key")
     def test_query_course_content(self, rag_system):
@@ -120,10 +125,12 @@ class TestRAGSystemQuery:
         # If tool was used, should have sources
         if len(sources) > 0:
             print(f"✓✓ Tool was used! Sources found: {sources}")
-            assert all(isinstance(s, dict) for s in sources), \
-                "All sources should be dicts"
-            assert all('text' in s and 'url' in s for s in sources), \
-                "Sources should have 'text' and 'url' fields"
+            assert all(
+                isinstance(s, dict) for s in sources
+            ), "All sources should be dicts"
+            assert all(
+                "text" in s and "url" in s for s in sources
+            ), "Sources should have 'text' and 'url' fields"
         else:
             print("⚠ Warning: No sources returned. Tool might not have been called.")
 
@@ -134,7 +141,7 @@ class TestRAGSystemQuery:
             "Tell me about computer use with Anthropic",
             "What are the main features of Claude API?",
             "How does prompt caching work?",
-            "What is tool use in Claude?"
+            "What is tool use in Claude?",
         ]
 
         for query in test_queries:
@@ -147,8 +154,9 @@ class TestRAGSystemQuery:
             print(f"  Response preview: {response[:150]}...")
 
             # Check for errors
-            assert "error" not in response.lower() and "failed" not in response.lower(), \
-                f"Query failed: {response}"
+            assert (
+                "error" not in response.lower() and "failed" not in response.lower()
+            ), f"Query failed: {response}"
 
             # At least one should return sources
             if len(sources) > 0:
@@ -172,7 +180,9 @@ class TestRAGSystemQuery:
         print(f"✓ First query response: {response1[:200]}...")
 
         # Second query referencing first
-        response2, sources2 = rag_system.query("Tell me more about it", session_id=session_id)
+        response2, sources2 = rag_system.query(
+            "Tell me more about it", session_id=session_id
+        )
 
         print(f"✓ Second query response: {response2[:200]}...")
 
@@ -206,8 +216,9 @@ class TestRAGSystemDocumentProcessing:
         print(f"\n✓ Courses loaded: {analytics['total_courses']}")
         print(f"✓ Course titles: {analytics['course_titles']}")
 
-        assert analytics['total_courses'] > 0, \
-            "No courses loaded. Check if documents were processed at startup."
+        assert (
+            analytics["total_courses"] > 0
+        ), "No courses loaded. Check if documents were processed at startup."
 
     def test_course_titles_valid(self, rag_system):
         """Test that loaded course titles are valid"""
@@ -235,8 +246,7 @@ class TestRAGSystemToolIntegration:
         """Test that search tool can access vector store"""
         # Execute tool directly
         result = rag_system.tool_manager.execute_tool(
-            'search_course_content',
-            query="Anthropic"
+            "search_course_content", query="Anthropic"
         )
 
         print(f"\n✓ Direct tool execution result: {result[:300]}...")
@@ -252,8 +262,7 @@ class TestRAGSystemToolIntegration:
 
         # Execute search
         rag_system.tool_manager.execute_tool(
-            'search_course_content',
-            query="Claude models"
+            "search_course_content", query="Claude models"
         )
 
         sources = rag_system.tool_manager.get_last_sources()
@@ -264,7 +273,7 @@ class TestRAGSystemToolIntegration:
         if sources:
             assert isinstance(sources, list)
             assert all(isinstance(s, dict) for s in sources)
-            assert all('text' in s and 'url' in s for s in sources)
+            assert all("text" in s and "url" in s for s in sources)
 
 
 class TestRAGSystemErrorPropagation:
@@ -280,7 +289,9 @@ class TestRAGSystemErrorPropagation:
         # UUID format is expected but let's try something else
         weird_session = "not-a-uuid-12345"
 
-        response, sources = rag_system.query("What is Claude?", session_id=weird_session)
+        response, sources = rag_system.query(
+            "What is Claude?", session_id=weird_session
+        )
 
         print(f"\n✓ Response with weird session: {response[:200]}")
 
@@ -323,7 +334,7 @@ class TestRAGSystemErrorPropagation:
             "What is <Claude>?",
             "Tell me about Claude's API & features",
             "How does tool_use() work?",
-            "Explain prompt\ncaching\twith tabs"
+            "Explain prompt\ncaching\twith tabs",
         ]
 
         for query in special_queries:
@@ -358,8 +369,7 @@ class TestRAGSystemErrorPropagation:
         """Test that tool manager errors don't crash the system"""
         # Get an invalid tool name
         result = rag_system.tool_manager.execute_tool(
-            'nonexistent_tool_xyz',
-            query="test"
+            "nonexistent_tool_xyz", query="test"
         )
 
         print(f"\n✓ Invalid tool result: {result}")
@@ -392,7 +402,7 @@ class TestRAGSystemErrorPropagation:
         queries = [
             "What is MCP?",
             "Tell me about computer use",
-            "How does Claude API work?"
+            "How does Claude API work?",
         ]
 
         all_responses = []
@@ -427,16 +437,11 @@ class TestRAGSystemStressTest:
     @pytest.mark.skipif(not config.ANTHROPIC_API_KEY, reason="No API key")
     def test_rapid_queries(self, rag_system):
         """Test rapid successive queries"""
-        queries = [
-            "Claude",
-            "API",
-            "MCP",
-            "tools",
-            "computer use"
-        ]
+        queries = ["Claude", "API", "MCP", "tools", "computer use"]
 
         responses = []
         import time
+
         start_time = time.time()
 
         for query in queries:
@@ -461,7 +466,7 @@ class TestRAGSystemStressTest:
             "Tell me more about its capabilities",
             "How does it compare to other AIs?",
             "What are the pricing options?",
-            "Thank you"
+            "Thank you",
         ]
 
         print(f"\n✓ Testing {len(exchanges)} exchanges in session {session_id}")
@@ -513,13 +518,13 @@ class TestRAGSystemComponentIntegration:
     def test_all_components_initialized(self, rag_system):
         """Verify all components are properly initialized"""
         components = {
-            'document_processor': rag_system.document_processor,
-            'vector_store': rag_system.vector_store,
-            'ai_generator': rag_system.ai_generator,
-            'session_manager': rag_system.session_manager,
-            'tool_manager': rag_system.tool_manager,
-            'search_tool': rag_system.search_tool,
-            'outline_tool': rag_system.outline_tool
+            "document_processor": rag_system.document_processor,
+            "vector_store": rag_system.vector_store,
+            "ai_generator": rag_system.ai_generator,
+            "session_manager": rag_system.session_manager,
+            "tool_manager": rag_system.tool_manager,
+            "search_tool": rag_system.search_tool,
+            "outline_tool": rag_system.outline_tool,
         }
 
         print("\n✓ Checking component initialization:")
@@ -533,19 +538,18 @@ class TestRAGSystemComponentIntegration:
 
         print(f"\n✓ Registered tools: {len(tool_defs)}")
 
-        tool_names = [t['name'] for t in tool_defs]
+        tool_names = [t["name"] for t in tool_defs]
         print(f"✓ Tool names: {tool_names}")
 
         # Should have at least search_course_content and get_course_outline
-        assert 'search_course_content' in tool_names
-        assert 'get_course_outline' in tool_names
+        assert "search_course_content" in tool_names
+        assert "get_course_outline" in tool_names
 
     def test_vector_store_accessible_by_tools(self, rag_system):
         """Test that tools can access vector store"""
         # Tools should be able to search
         result = rag_system.tool_manager.execute_tool(
-            'search_course_content',
-            query="test query"
+            "search_course_content", query="test query"
         )
 
         print(f"\n✓ Tool search result: {result[:200]}...")
@@ -592,8 +596,8 @@ class TestRAGSystemComponentIntegration:
             for i, source in enumerate(sources):
                 print(f"  Source {i+1}: {source}")
                 assert isinstance(source, dict), "Source should be dict"
-                assert 'text' in source, "Source missing text"
-                assert 'url' in source, "Source missing url"
+                assert "text" in source, "Source missing text"
+                assert "url" in source, "Source missing url"
 
 
 if __name__ == "__main__":
