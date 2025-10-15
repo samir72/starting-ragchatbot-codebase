@@ -1,9 +1,11 @@
 """
 Shared pytest fixtures and configuration for all tests
 """
-import sys
+
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import pytest
 from unittest.mock import Mock, MagicMock
@@ -11,10 +13,10 @@ from fastapi.testclient import TestClient
 from typing import Dict, List
 
 from config import config as app_config
-from vector_store import VectorStore
-from search_tools import CourseSearchTool, ToolManager
 from ai_generator import AIGenerator
 from rag_system import RAGSystem
+from search_tools import CourseSearchTool, ToolManager
+from vector_store import VectorStore
 from models import CourseChunk
 
 
@@ -30,7 +32,7 @@ def vector_store_instance():
     return VectorStore(
         chroma_path=app_config.CHROMA_PATH,
         embedding_model=app_config.EMBEDDING_MODEL,
-        max_results=app_config.MAX_RESULTS
+        max_results=app_config.MAX_RESULTS,
     )
 
 
@@ -59,8 +61,7 @@ def tool_manager(vector_store_instance):
 def ai_generator():
     """Create AIGenerator instance"""
     return AIGenerator(
-        api_key=app_config.ANTHROPIC_API_KEY,
-        model=app_config.ANTHROPIC_MODEL
+        api_key=app_config.ANTHROPIC_API_KEY, model=app_config.ANTHROPIC_MODEL
     )
 
 

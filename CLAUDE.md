@@ -26,6 +26,57 @@ Create `.env` in root with:
 ANTHROPIC_API_KEY=your_key_here
 ```
 
+## Code Quality Tools
+
+This project uses several code quality tools to maintain consistent code style and catch issues early:
+
+**Tools included:**
+- **black** - Automatic code formatting (88 character line length)
+- **isort** - Import sorting (configured to work with black)
+- **flake8** - Linting and style checking
+- **mypy** - Static type checking
+- **pytest** - Testing framework
+
+**Quick commands:**
+
+Format code:
+```bash
+./scripts/format.sh
+```
+
+Run linting:
+```bash
+./scripts/lint.sh
+```
+
+Run tests:
+```bash
+./scripts/test.sh
+```
+
+Run all quality checks:
+```bash
+./scripts/quality.sh
+```
+
+**Manual usage:**
+```bash
+# Format code
+uv run black backend/
+uv run isort backend/
+
+# Check code quality
+uv run flake8 backend/
+uv run mypy backend/
+
+# Run tests
+cd backend && uv run pytest
+```
+
+**Configuration files:**
+- `pyproject.toml` - Contains configuration for black, isort, mypy, and pytest
+- `.flake8` - Configuration for flake8 linting rules
+
 ## Architecture Overview
 
 This is a **Retrieval-Augmented Generation (RAG) system** for querying course materials. The architecture follows a **two-stage AI generation pattern** with tool-based search.
