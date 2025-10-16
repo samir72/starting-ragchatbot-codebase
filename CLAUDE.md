@@ -267,6 +267,3 @@ Edit `SYSTEM_PROMPT` in `backend/ai_generator.py`
 
 **Change conversation memory:**
 Edit `MAX_HISTORY` in `backend/config.py`
-- always use uv to run the server do not use pip directly
-- make sure to use UV to manage all dependencies
-- don't run the server using ./run.sh I will start it myself
